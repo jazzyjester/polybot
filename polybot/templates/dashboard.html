@@ -73,6 +73,11 @@
     <p class="dim">No scan has completed yet. First cycle is running in the background — refresh in a minute.</p>
   {% endif %}
 
+  {% if stale_cities %}
+    <p class="error">⚠ No fresh data (last 3 hours) for: {{ stale_cities|join(", ") }} —
+    likely a broken scan for that city specifically; check the Actions log if this persists.</p>
+  {% endif %}
+
   {% for city, brackets in results.items() %}
   <div class="city-card">
     <h2>{{ city }}</h2>

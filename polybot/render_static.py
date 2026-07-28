@@ -8,18 +8,19 @@ next scheduled workflow run regenerates and commits this file.
 """
 
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from jinja2 import Environment, FileSystemLoader
 
 from . import storage
-from .config import EDGE_THRESHOLD
+from .config import CITIES, EDGE_THRESHOLD
 from .resolver import resolve_all
 
 TEMPLATE_DIR = os.path.join(os.path.dirname(__file__), "templates")
 OUTPUT_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docs", "index.html")
 REPO_URL = os.environ.get("POLYBOT_REPO_URL", "")
 PAGE_REFRESH_SECONDS = 300  # static page: no point refreshing faster than CI updates it
+STALE_AFTER = timedelta(hours=3)  # generous vs. the 30-min scan cadence
 
 
 def render():
@@ -27,9 +28,12 @@ def render():
     results = storage.latest_results(conn)
     accuracy = resolve_all(conn, EDGE_THRESHOLD)
     last_scan_str = storage.latest_scan_time(conn)
+    scan_times = storage.latest_scan_time_per_city(conn)
     conn.close()
 
     last_scan = datetime.fromisoformat(last_scan_str) if last_scan_str else None
+    now = datetime.now(timezone.utc)
+    stale = storage.stale_cities(scan_times, CITIES.keys(), now, STALE_AFTER)
 
     env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
     template = env.get_template("dashboard.html")
@@ -44,6 +48,7 @@ def render():
         page_refresh_seconds=PAGE_REFRESH_SECONDS,
         static=True,
         repo_url=REPO_URL,
+        stale_cities=stale,
     )
 
     os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)

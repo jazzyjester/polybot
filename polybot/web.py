@@ -8,7 +8,7 @@ scans on page load, so leaving the tab open doesn't hammer the APIs.
 
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from flask import Flask, jsonify, render_template, request
 
@@ -21,6 +21,7 @@ app = Flask(__name__)
 
 SCAN_INTERVAL_SECONDS = 30 * 60  # weather forecasts don't move faster than this
 PAGE_REFRESH_SECONDS = 60        # how often the browser tab reloads itself
+STALE_AFTER = timedelta(hours=3)  # generous vs. the scan cadence
 
 STATE = {
     "last_scan": None,
@@ -84,6 +85,13 @@ def dashboard():
     if snapshot["next_scan_at"]:
         next_scan_in = max(0, int(snapshot["next_scan_at"] - time.time()))
 
+    stale = []
+    if snapshot["last_scan"]:
+        conn = storage.get_connection()
+        scan_times = storage.latest_scan_time_per_city(conn)
+        conn.close()
+        stale = storage.stale_cities(scan_times, CITIES.keys(), datetime.now(timezone.utc), STALE_AFTER)
+
     return render_template(
         "dashboard.html",
         results=snapshot["results"],
@@ -95,6 +103,7 @@ def dashboard():
         edge_threshold=EDGE_THRESHOLD,
         page_refresh_seconds=PAGE_REFRESH_SECONDS,
         static=False,
+        stale_cities=stale,
     )
 
 

@@ -105,6 +105,26 @@ def latest_scan_time(conn: sqlite3.Connection) -> str | None:
     return row[0] if row else None
 
 
+def latest_scan_time_per_city(conn: sqlite3.Connection) -> dict[str, str]:
+    cur = conn.execute("SELECT city, MAX(ts) FROM snapshots GROUP BY city")
+    return dict(cur.fetchall())
+
+
+def stale_cities(scan_times: dict[str, str], city_names, now, max_age) -> list[str]:
+    """Cities with no snapshot at all, or none within max_age of `now`. This
+    is what makes a silently-broken per-city scan (bad slug, API change,
+    etc.) visible on the dashboard instead of just quietly going stale."""
+    stale = []
+    for city in city_names:
+        ts_str = scan_times.get(city)
+        if ts_str is None:
+            stale.append(city)
+            continue
+        if now - datetime.fromisoformat(ts_str) > max_age:
+            stale.append(city)
+    return stale
+
+
 def unresolved_event_slugs(conn: sqlite3.Connection) -> list[tuple[str, str, str]]:
     """Distinct (event_slug, city, target_date) from snapshots not yet resolved."""
     cur = conn.execute(
