@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: scan-and-publish
@@ -15,6 +17,9 @@ concurrency:
 jobs:
   scan:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -32,7 +37,7 @@ jobs:
           POLYBOT_REPO_URL: ${{ github.server_url }}/${{ github.repository }}
         run: python -m polybot.render_static
 
-      - name: Commit updated data and dashboard
+      - name: Commit updated data
         run: |
           git config user.name "polybot-ci"
           git config user.email "actions@users.noreply.github.com"
@@ -40,3 +45,20 @@ jobs:
           git diff --cached --quiet && exit 0
           git commit -m "Automated scan $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           git push
+
+      # Deploy via Actions rather than the legacy branch-based Pages
+      # builder, which errored intermittently on trivial static HTML for
+      # no discernible content reason. This path reports success/failure
+      # directly in this workflow's own logs instead of a separate,
+      # harder-to-observe subsystem -- important since nobody's watching
+      # this for a month.
+      - name: Upload Pages artifact
+        if: always()
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy to GitHub Pages
+        if: always()
+        id: deployment
+        uses: actions/deploy-pages@v4
