@@ -1,0 +1,42 @@
+name: Scan and publish
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: scan-and-publish
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -r requirements.txt
+
+      - name: Scan markets
+        run: python -m polybot.scanner
+
+      - name: Render dashboard
+        env:
+          POLYBOT_REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: python -m polybot.render_static
+
+      - name: Commit updated data and dashboard
+        run: |
+          git config user.name "polybot-ci"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/polybot.sqlite3 docs/index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Automated scan $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          git push

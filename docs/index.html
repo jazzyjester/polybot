@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="refresh" content="300">
+<title>PolyBOT — Weather Pilot</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 980px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    background: #0f1115;
+    color: #e6e6e6;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 0.2rem; }
+  .subtitle { color: #9aa0a6; font-size: 0.9rem; margin-bottom: 1.2rem; }
+  .statusbar {
+    display: flex; align-items: center; gap: 1rem;
+    background: #1a1d24; border: 1px solid #2a2e37; border-radius: 8px;
+    padding: 0.8rem 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+    font-size: 0.9rem;
+  }
+  .statusbar span.dim { color: #9aa0a6; }
+  button {
+    background: #3b82f6; color: white; border: none; border-radius: 6px;
+    padding: 0.5rem 1rem; font-size: 0.85rem; cursor: pointer;
+  }
+  button:hover { background: #2563eb; }
+  .city-card {
+    background: #1a1d24; border: 1px solid #2a2e37; border-radius: 8px;
+    padding: 1rem; margin-bottom: 1.2rem;
+  }
+  .city-card h2 { margin: 0 0 0.6rem 0; font-size: 1.05rem; text-transform: capitalize; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th, td { text-align: right; padding: 0.3rem 0.5rem; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: #9aa0a6; font-weight: 500; border-bottom: 1px solid #2a2e37; }
+  tr.edge td { background: #2a1f0f; }
+  tr.edge td:first-child { border-left: 3px solid #f0b429; }
+  .pos { color: #4ade80; }
+  .neg { color: #f87171; }
+  .error { color: #f87171; font-size: 0.85rem; }
+  .accuracy { background: #1a1d24; border: 1px solid #2a2e37; border-radius: 8px; padding: 1rem; }
+  .accuracy h2 { margin-top: 0; font-size: 1.05rem; }
+  .accuracy ul { margin: 0.4rem 0; padding-left: 1.2rem; font-size: 0.85rem; color: #c8ccd4; }
+  .disclaimer { color: #9aa0a6; font-size: 0.78rem; margin-top: 2rem; line-height: 1.4; }
+</style>
+</head>
+<body>
+  <h1>PolyBOT — Weather Market Pilot</h1>
+  <div class="subtitle">Paper-trading only. No real orders are placed.</div>
+
+  <div class="statusbar">
+    <div>
+      <strong>Last scan:</strong>
+      <span class="dim">2026-07-28 10:45:47 UTC</span>
+    </div>
+    <div>
+      <strong>Next scan:</strong>
+      <span class="dim">
+        
+          runs automatically every 30 min via GitHub Actions
+        
+      </span>
+    </div>
+    <div class="dim">page refreshes every 300s</div>
+    
+  </div>
+
+  
+
+  
+  <div class="city-card">
+    <h2>chongqing</h2>
+    <table>
+      <thead>
+        <tr><th>bracket</th><th>market</th><th>model</th><th>edge</th><th>volume</th></tr>
+      </thead>
+      <tbody>
+        
+        
+        <tr class="edge">
+          <td>35°C</td>
+          <td>0.045</td>
+          <td>0.323</td>
+          <td class="pos">+0.278</td>
+          <td>584</td>
+        </tr>
+        
+        
+        <tr class="edge">
+          <td>34°C or below</td>
+          <td>0.020</td>
+          <td>0.258</td>
+          <td class="pos">+0.238</td>
+          <td>789</td>
+        </tr>
+        
+        
+        <tr class="edge">
+          <td>36°C</td>
+          <td>0.215</td>
+          <td>0.355</td>
+          <td class="pos">+0.140</td>
+          <td>877</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>44°C or higher</td>
+          <td>0.001</td>
+          <td>0.000</td>
+          <td class="neg">-0.001</td>
+          <td>671</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>41°C</td>
+          <td>0.002</td>
+          <td>0.000</td>
+          <td class="neg">-0.002</td>
+          <td>323</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>42°C</td>
+          <td>0.002</td>
+          <td>0.000</td>
+          <td class="neg">-0.002</td>
+          <td>282</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>43°C</td>
+          <td>0.002</td>
+          <td>0.000</td>
+          <td class="neg">-0.002</td>
+          <td>366</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>40°C</td>
+          <td>0.015</td>
+          <td>0.000</td>
+          <td class="neg">-0.015</td>
+          <td>765</td>
+        </tr>
+        
+        
+        <tr class="edge">
+          <td>39°C</td>
+          <td>0.085</td>
+          <td>0.000</td>
+          <td class="neg">-0.085</td>
+          <td>1835</td>
+        </tr>
+        
+        
+        <tr class="edge">
+          <td>38°C</td>
+          <td>0.240</td>
+          <td>0.000</td>
+          <td class="neg">-0.240</td>
+          <td>1596</td>
+        </tr>
+        
+        
+        <tr class="edge">
+          <td>37°C</td>
+          <td>0.425</td>
+          <td>0.065</td>
+          <td class="neg">-0.360</td>
+          <td>693</td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </div>
+  
+  <div class="city-card">
+    <h2>denver</h2>
+    <table>
+      <thead>
+        <tr><th>bracket</th><th>market</th><th>model</th><th>edge</th><th>volume</th></tr>
+      </thead>
+      <tbody>
+        
+        
+        <tr class="">
+          <td>96°F or higher</td>
+          <td>0.005</td>
+          <td>0.065</td>
+          <td class="pos">+0.059</td>
+          <td>4424</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>94-95°F</td>
+          <td>0.275</td>
+          <td>0.323</td>
+          <td class="pos">+0.048</td>
+          <td>2321</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>84-85°F</td>
+          <td>0.005</td>
+          <td>0.032</td>
+          <td class="pos">+0.027</td>
+          <td>1593</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>88-89°F</td>
+          <td>0.080</td>
+          <td>0.097</td>
+          <td class="pos">+0.017</td>
+          <td>1955</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>90-91°F</td>
+          <td>0.310</td>
+          <td>0.323</td>
+          <td class="pos">+0.013</td>
+          <td>6797</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>77°F or below</td>
+          <td>0.001</td>
+          <td>0.000</td>
+          <td class="neg">-0.001</td>
+          <td>195</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>78-79°F</td>
+          <td>0.001</td>
+          <td>0.000</td>
+          <td class="neg">-0.001</td>
+          <td>551</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>80-81°F</td>
+          <td>0.001</td>
+          <td>0.000</td>
+          <td class="neg">-0.001</td>
+          <td>820</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>82-83°F</td>
+          <td>0.001</td>
+          <td>0.000</td>
+          <td class="neg">-0.001</td>
+          <td>794</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>86-87°F</td>
+          <td>0.040</td>
+          <td>0.000</td>
+          <td class="neg">-0.040</td>
+          <td>2343</td>
+        </tr>
+        
+        
+        <tr class="edge">
+          <td>92-93°F</td>
+          <td>0.295</td>
+          <td>0.161</td>
+          <td class="neg">-0.134</td>
+          <td>1440</td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </div>
+  
+  <div class="city-card">
+    <h2>munich</h2>
+    <table>
+      <thead>
+        <tr><th>bracket</th><th>market</th><th>model</th><th>edge</th><th>volume</th></tr>
+      </thead>
+      <tbody>
+        
+        
+        <tr class="edge">
+          <td>27°C</td>
+          <td>0.080</td>
+          <td>0.226</td>
+          <td class="pos">+0.146</td>
+          <td>7307</td>
+        </tr>
+        
+        
+        <tr class="edge">
+          <td>26°C</td>
+          <td>0.005</td>
+          <td>0.097</td>
+          <td class="pos">+0.091</td>
+          <td>5157</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>24°C or below</td>
+          <td>0.001</td>
+          <td>0.000</td>
+          <td class="neg">-0.001</td>
+          <td>1314</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>25°C</td>
+          <td>0.001</td>
+          <td>0.000</td>
+          <td class="neg">-0.001</td>
+          <td>2700</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>32°C</td>
+          <td>0.001</td>
+          <td>0.000</td>
+          <td class="neg">-0.001</td>
+          <td>1225</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>33°C</td>
+          <td>0.001</td>
+          <td>0.000</td>
+          <td class="neg">-0.001</td>
+          <td>923</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>34°C or higher</td>
+          <td>0.001</td>
+          <td>0.000</td>
+          <td class="neg">-0.001</td>
+          <td>429</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>31°C</td>
+          <td>0.006</td>
+          <td>0.000</td>
+          <td class="neg">-0.006</td>
+          <td>10284</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>30°C</td>
+          <td>0.015</td>
+          <td>0.000</td>
+          <td class="neg">-0.015</td>
+          <td>9493</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>28°C</td>
+          <td>0.535</td>
+          <td>0.484</td>
+          <td class="neg">-0.051</td>
+          <td>17205</td>
+        </tr>
+        
+        
+        <tr class="edge">
+          <td>29°C</td>
+          <td>0.375</td>
+          <td>0.194</td>
+          <td class="neg">-0.181</td>
+          <td>12735</td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </div>
+  
+  <div class="city-card">
+    <h2>paris</h2>
+    <table>
+      <thead>
+        <tr><th>bracket</th><th>market</th><th>model</th><th>edge</th><th>volume</th></tr>
+      </thead>
+      <tbody>
+        
+        
+        <tr class="edge">
+          <td>34°C</td>
+          <td>0.009</td>
+          <td>0.355</td>
+          <td class="pos">+0.346</td>
+          <td>7301</td>
+        </tr>
+        
+        
+        <tr class="edge">
+          <td>35°C</td>
+          <td>0.003</td>
+          <td>0.129</td>
+          <td class="pos">+0.127</td>
+          <td>3199</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>30°C</td>
+          <td>0.003</td>
+          <td>0.032</td>
+          <td class="pos">+0.029</td>
+          <td>6501</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>27°C or below</td>
+          <td>0.001</td>
+          <td>0.000</td>
+          <td class="neg">-0.001</td>
+          <td>7072</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>28°C</td>
+          <td>0.001</td>
+          <td>0.000</td>
+          <td class="neg">-0.001</td>
+          <td>1948</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>36°C</td>
+          <td>0.001</td>
+          <td>0.000</td>
+          <td class="neg">-0.001</td>
+          <td>2514</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>37°C or higher</td>
+          <td>0.001</td>
+          <td>0.000</td>
+          <td class="neg">-0.001</td>
+          <td>1814</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>29°C</td>
+          <td>0.005</td>
+          <td>0.000</td>
+          <td class="neg">-0.005</td>
+          <td>3517</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>31°C</td>
+          <td>0.105</td>
+          <td>0.097</td>
+          <td class="neg">-0.008</td>
+          <td>12053</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>33°C</td>
+          <td>0.290</td>
+          <td>0.258</td>
+          <td class="neg">-0.032</td>
+          <td>9572</td>
+        </tr>
+        
+        
+        <tr class="edge">
+          <td>32°C</td>
+          <td>0.620</td>
+          <td>0.129</td>
+          <td class="neg">-0.491</td>
+          <td>13124</td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </div>
+  
+  <div class="city-card">
+    <h2>taipei</h2>
+    <table>
+      <thead>
+        <tr><th>bracket</th><th>market</th><th>model</th><th>edge</th><th>volume</th></tr>
+      </thead>
+      <tbody>
+        
+        
+        <tr class="edge">
+          <td>34°C</td>
+          <td>0.070</td>
+          <td>0.677</td>
+          <td class="pos">+0.607</td>
+          <td>1129</td>
+        </tr>
+        
+        
+        <tr class="edge">
+          <td>33°C</td>
+          <td>0.015</td>
+          <td>0.290</td>
+          <td class="pos">+0.275</td>
+          <td>1305</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>32°C</td>
+          <td>0.004</td>
+          <td>0.032</td>
+          <td class="pos">+0.028</td>
+          <td>2073</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>30°C or below</td>
+          <td>0.002</td>
+          <td>0.000</td>
+          <td class="neg">-0.002</td>
+          <td>485</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>31°C</td>
+          <td>0.003</td>
+          <td>0.000</td>
+          <td class="neg">-0.003</td>
+          <td>2757</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>39°C</td>
+          <td>0.003</td>
+          <td>0.000</td>
+          <td class="neg">-0.003</td>
+          <td>796</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>40°C or higher</td>
+          <td>0.005</td>
+          <td>0.000</td>
+          <td class="neg">-0.005</td>
+          <td>597</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>38°C</td>
+          <td>0.070</td>
+          <td>0.000</td>
+          <td class="neg">-0.070</td>
+          <td>1365</td>
+        </tr>
+        
+        
+        <tr class="edge">
+          <td>37°C</td>
+          <td>0.250</td>
+          <td>0.000</td>
+          <td class="neg">-0.250</td>
+          <td>1539</td>
+        </tr>
+        
+        
+        <tr class="edge">
+          <td>35°C</td>
+          <td>0.255</td>
+          <td>0.000</td>
+          <td class="neg">-0.255</td>
+          <td>2748</td>
+        </tr>
+        
+        
+        <tr class="edge">
+          <td>36°C</td>
+          <td>0.325</td>
+          <td>0.000</td>
+          <td class="neg">-0.325</td>
+          <td>1159</td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </div>
+  
+  <div class="city-card">
+    <h2>toronto</h2>
+    <table>
+      <thead>
+        <tr><th>bracket</th><th>market</th><th>model</th><th>edge</th><th>volume</th></tr>
+      </thead>
+      <tbody>
+        
+        
+        <tr class="edge">
+          <td>30°C or higher</td>
+          <td>0.001</td>
+          <td>0.581</td>
+          <td class="pos">+0.580</td>
+          <td>513</td>
+        </tr>
+        
+        
+        <tr class="edge">
+          <td>29°C</td>
+          <td>0.001</td>
+          <td>0.194</td>
+          <td class="pos">+0.193</td>
+          <td>750</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>28°C</td>
+          <td>0.096</td>
+          <td>0.097</td>
+          <td class="pos">+0.001</td>
+          <td>7418</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>20°C or below</td>
+          <td>0.001</td>
+          <td>0.000</td>
+          <td class="neg">-0.001</td>
+          <td>1840</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>21°C</td>
+          <td>0.001</td>
+          <td>0.000</td>
+          <td class="neg">-0.001</td>
+          <td>557</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>22°C</td>
+          <td>0.001</td>
+          <td>0.000</td>
+          <td class="neg">-0.001</td>
+          <td>2856</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>23°C</td>
+          <td>0.008</td>
+          <td>0.000</td>
+          <td class="neg">-0.008</td>
+          <td>3499</td>
+        </tr>
+        
+        
+        <tr class="">
+          <td>24°C</td>
+          <td>0.025</td>
+          <td>0.000</td>
+          <td class="neg">-0.025</td>
+          <td>6948</td>
+        </tr>
+        
+        
+        <tr class="edge">
+          <td>25°C</td>
+          <td>0.100</td>
+          <td>0.000</td>
+          <td class="neg">-0.100</td>
+          <td>7667</td>
+        </tr>
+        
+        
+        <tr class="edge">
+          <td>27°C</td>
+          <td>0.415</td>
+          <td>0.097</td>
+          <td class="neg">-0.318</td>
+          <td>7951</td>
+        </tr>
+        
+        
+        <tr class="edge">
+          <td>26°C</td>
+          <td>0.385</td>
+          <td>0.032</td>
+          <td class="neg">-0.353</td>
+          <td>10224</td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </div>
+  
+
+  
+
+  <div class="accuracy">
+    <h2>Track record (paper trading)</h2>
+    
+      <ul>
+        <li>Resolved markets so far: 0</li>
+        <li>
+          Brier score:
+          
+            not enough resolved markets yet
+          
+        </li>
+        <li>
+          Paper trades at |edge| ≥ 0.08: 0
+          
+        </li>
+      </ul>
+    
+  </div>
+
+  <div class="disclaimer">
+    Model = fraction of a 31-member Open-Meteo GFS ensemble forecast landing in each bracket.
+    Edge = model probability − Polymarket price. This is a research pilot: it logs and
+    paper-trades only. Treat early "edges" as unproven until the Brier score and paper P&amp;L
+    above are based on enough resolved markets to mean something (a handful of days isn't).
+    
+  </div>
+
+
+</body>
+</html>

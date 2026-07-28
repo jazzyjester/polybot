@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="refresh" content="{{ page_refresh_seconds }}">
+<title>PolyBOT — Weather Pilot</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 980px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    background: #0f1115;
+    color: #e6e6e6;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 0.2rem; }
+  .subtitle { color: #9aa0a6; font-size: 0.9rem; margin-bottom: 1.2rem; }
+  .statusbar {
+    display: flex; align-items: center; gap: 1rem;
+    background: #1a1d24; border: 1px solid #2a2e37; border-radius: 8px;
+    padding: 0.8rem 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+    font-size: 0.9rem;
+  }
+  .statusbar span.dim { color: #9aa0a6; }
+  button {
+    background: #3b82f6; color: white; border: none; border-radius: 6px;
+    padding: 0.5rem 1rem; font-size: 0.85rem; cursor: pointer;
+  }
+  button:hover { background: #2563eb; }
+  .city-card {
+    background: #1a1d24; border: 1px solid #2a2e37; border-radius: 8px;
+    padding: 1rem; margin-bottom: 1.2rem;
+  }
+  .city-card h2 { margin: 0 0 0.6rem 0; font-size: 1.05rem; text-transform: capitalize; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th, td { text-align: right; padding: 0.3rem 0.5rem; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: #9aa0a6; font-weight: 500; border-bottom: 1px solid #2a2e37; }
+  tr.edge td { background: #2a1f0f; }
+  tr.edge td:first-child { border-left: 3px solid #f0b429; }
+  .pos { color: #4ade80; }
+  .neg { color: #f87171; }
+  .error { color: #f87171; font-size: 0.85rem; }
+  .accuracy { background: #1a1d24; border: 1px solid #2a2e37; border-radius: 8px; padding: 1rem; }
+  .accuracy h2 { margin-top: 0; font-size: 1.05rem; }
+  .accuracy ul { margin: 0.4rem 0; padding-left: 1.2rem; font-size: 0.85rem; color: #c8ccd4; }
+  .disclaimer { color: #9aa0a6; font-size: 0.78rem; margin-top: 2rem; line-height: 1.4; }
+</style>
+</head>
+<body>
+  <h1>PolyBOT — Weather Market Pilot</h1>
+  <div class="subtitle">Paper-trading only. No real orders are placed.</div>
+
+  <div class="statusbar">
+    <div>
+      <strong>Last scan:</strong>
+      <span class="dim">{{ last_scan.strftime("%Y-%m-%d %H:%M:%S UTC") if last_scan else "never yet" }}</span>
+    </div>
+    <div>
+      <strong>Next scan:</strong>
+      <span class="dim">
+        {% if static %}
+          runs automatically every 30 min via GitHub Actions
+        {% elif scanning %}running now…{% elif next_scan_in is not none %}~{{ (next_scan_in // 60) }}m{{ next_scan_in % 60 }}s{% else %}pending{% endif %}
+      </span>
+    </div>
+    <div class="dim">page refreshes every {{ page_refresh_seconds }}s</div>
+    {% if not static %}<button onclick="scanNow()">Scan now</button>{% endif %}
+  </div>
+
+  {% if not results and not errors %}
+    <p class="dim">No scan has completed yet. First cycle is running in the background — refresh in a minute.</p>
+  {% endif %}
+
+  {% for city, brackets in results.items() %}
+  <div class="city-card">
+    <h2>{{ city }}</h2>
+    <table>
+      <thead>
+        <tr><th>bracket</th><th>market</th><th>model</th><th>edge</th><th>volume</th></tr>
+      </thead>
+      <tbody>
+        {% for b in brackets|sort(attribute="edge", reverse=true) %}
+        {% set is_edge = (b.edge >= edge_threshold or b.edge <= -edge_threshold) %}
+        <tr class="{{ 'edge' if is_edge else '' }}">
+          <td>{{ b.label }}</td>
+          <td>{{ "%.3f"|format(b.market_price) }}</td>
+          <td>{{ "%.3f"|format(b.model_probability) }}</td>
+          <td class="{{ 'pos' if b.edge > 0 else 'neg' }}">{{ "%+.3f"|format(b.edge) }}</td>
+          <td>{{ "%.0f"|format(b.volume) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endfor %}
+
+  {% for city, err in errors.items() %}
+    <p class="error">[{{ city }}] {{ err }}</p>
+  {% endfor %}
+
+  <div class="accuracy">
+    <h2>Track record (paper trading)</h2>
+    {% if not accuracy %}
+      <p class="dim">No resolver run yet.</p>
+    {% elif accuracy.error %}
+      <p class="error">{{ accuracy.error }}</p>
+    {% else %}
+      <ul>
+        <li>Resolved markets so far: {{ accuracy.resolved|length }}</li>
+        <li>
+          Brier score:
+          {% if accuracy.brier_score is not none %}
+            {{ "%.4f"|format(accuracy.brier_score) }} over {{ accuracy.n_brier }} outcomes
+            (0 = perfect, 0.25 ≈ coin flip, lower is better)
+          {% else %}
+            not enough resolved markets yet
+          {% endif %}
+        </li>
+        <li>
+          Paper trades at |edge| ≥ {{ accuracy.threshold }}: {{ accuracy.n_bets }}
+          {% if accuracy.n_bets %}
+            — staked {{ "%.2f"|format(accuracy.paper_staked) }},
+            returned {{ "%.2f"|format(accuracy.paper_return) }},
+            P&amp;L
+            <span class="{{ 'pos' if accuracy.paper_pnl >= 0 else 'neg' }}">
+              {{ "%+.2f"|format(accuracy.paper_pnl) }}
+              ({{ "%+.1f"|format(accuracy.paper_roi * 100) }}% ROI)
+            </span>
+            — no real money
+          {% endif %}
+        </li>
+      </ul>
+    {% endif %}
+  </div>
+
+  <div class="disclaimer">
+    Model = fraction of a 31-member Open-Meteo GFS ensemble forecast landing in each bracket.
+    Edge = model probability − Polymarket price. This is a research pilot: it logs and
+    paper-trades only. Treat early "edges" as unproven until the Brier score and paper P&amp;L
+    above are based on enough resolved markets to mean something (a handful of days isn't).
+    {% if static and repo_url %}
+      <br>Runs on <a href="{{ repo_url }}" style="color:#9aa0a6;">GitHub Actions</a>, source of truth is the committed SQLite db in the repo.
+    {% endif %}
+  </div>
+
+{% if not static %}
+<script>
+function scanNow() {
+  fetch("/scan-now", { method: "POST" }).then(() => {
+    setTimeout(() => location.reload(), 1500);
+  });
+}
+</script>
+{% endif %}
+</body>
+</html>
