@@ -50,10 +50,23 @@ def resolve_all(conn, threshold: float) -> dict:
             skipped.append(f"{city} {target_date_str}: no observation yet")
             continue
 
+        # One row per bracket: the most recent snapshot before resolution.
+        # Without this, a bracket scanned every 30 min over many hours would
+        # count as many separate "trades" for what is really one continuing
+        # opportunity, inflating both the Brier sample size and paper P&L.
         cur = conn.execute(
-            """SELECT bracket_label, low, high, market_price, model_probability, edge
-               FROM snapshots WHERE event_slug = ? ORDER BY id""",
-            (event_slug,),
+            """SELECT s.bracket_label, s.low, s.high, s.market_price,
+                      s.model_probability, s.edge
+               FROM snapshots s
+               INNER JOIN (
+                   SELECT bracket_label, MAX(id) AS max_id
+                   FROM snapshots WHERE event_slug = ?
+                   GROUP BY bracket_label
+               ) latest ON s.bracket_label = latest.bracket_label
+                        AND s.id = latest.max_id
+               WHERE s.event_slug = ?
+               ORDER BY s.id""",
+            (event_slug, event_slug),
         )
         snapshot_rows = cur.fetchall()
 
