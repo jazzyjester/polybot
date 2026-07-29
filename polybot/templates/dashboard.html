@@ -44,7 +44,16 @@
   .error { color: #f87171; font-size: 0.85rem; }
   .accuracy { background: #1a1d24; border: 1px solid #2a2e37; border-radius: 8px; padding: 1rem; }
   .accuracy h2 { margin-top: 0; font-size: 1.05rem; }
+  .accuracy h3 { font-size: 0.9rem; margin: 1.2rem 0 0.4rem 0; color: #c8ccd4; }
   .accuracy ul { margin: 0.4rem 0; padding-left: 1.2rem; font-size: 0.85rem; color: #c8ccd4; }
+  .chart { margin: 0.4rem 0 1rem 0; }
+  table.daily { font-size: 0.82rem; }
+  table.daily th, table.daily td { text-align: left; padding: 0.35rem 0.6rem; }
+  table.daily td:nth-child(3), table.daily td:nth-child(4), table.daily td:last-child { text-align: right; }
+  table.daily tbody tr:nth-child(odd) { background: #15171d; }
+  details summary { cursor: pointer; color: #9aa0a6; }
+  details ul { margin: 0.3rem 0 0 0; padding-left: 1.1rem; }
+  details li { margin: 0.15rem 0; }
   .disclaimer { color: #9aa0a6; font-size: 0.78rem; margin-top: 2rem; line-height: 1.4; }
 </style>
 </head>
@@ -113,11 +122,11 @@
       <p class="error">{{ accuracy.error }}</p>
     {% else %}
       <ul>
-        <li>Resolved markets so far: {{ accuracy.resolved|length }}</li>
+        <li>Resolved markets so far: {{ accuracy.total_resolved }}</li>
         <li>
           Brier score:
           {% if accuracy.brier_score is not none %}
-            {{ "%.4f"|format(accuracy.brier_score) }} over {{ accuracy.n_brier }} outcomes
+            {{ "%.4f"|format(accuracy.brier_score) }} over {{ accuracy.n_brier }} bracket outcomes
             (0 = perfect, 0.25 ≈ coin flip, lower is better)
           {% else %}
             not enough resolved markets yet
@@ -137,6 +146,47 @@
           {% endif %}
         </li>
       </ul>
+
+      {% if accuracy.daily %}
+      <h3>Cumulative paper P&amp;L by resolved day</h3>
+      <div class="chart">{{ accuracy.pnl_chart_svg|safe }}</div>
+
+      <h3>Day by day (most recent first)</h3>
+      <table class="daily">
+        <thead>
+          <tr><th>date</th><th>city</th><th>actual</th><th>brier</th><th>bets</th><th>day P&amp;L</th></tr>
+        </thead>
+        <tbody>
+          {% for r in accuracy.daily|reverse %}
+          <tr>
+            <td>{{ r.target_date }}</td>
+            <td style="text-transform: capitalize;">{{ r.city }}</td>
+            <td>{{ "%.1f"|format(r.actual) }}</td>
+            <td>{{ "%.3f"|format(r.brier) if r.brier is not none else "—" }}</td>
+            <td>
+              {% if r.bets %}
+              <details>
+                <summary>{{ r.bets|length }} bet{{ "s" if r.bets|length != 1 else "" }}</summary>
+                <ul>
+                  {% for b in r.bets %}
+                  <li>
+                    {{ b.label }} — edge {{ "%+.3f"|format(b.edge) }},
+                    staked {{ "%.2f"|format(b.stake) }}, returned {{ "%.2f"|format(b.returned) }}
+                    (<span class="{{ 'pos' if b.pnl >= 0 else 'neg' }}">{{ "%+.2f"|format(b.pnl) }}</span>)
+                  </li>
+                  {% endfor %}
+                </ul>
+              </details>
+              {% else %}
+              <span class="dim">none</span>
+              {% endif %}
+            </td>
+            <td class="{{ 'pos' if r.day_pnl >= 0 else 'neg' }}">{{ "%+.2f"|format(r.day_pnl) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
     {% endif %}
   </div>
 

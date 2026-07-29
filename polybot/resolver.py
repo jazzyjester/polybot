@@ -93,32 +93,119 @@ def resolve_pending(conn) -> tuple[list[dict], list[str]]:
     return newly_resolved, skipped
 
 
-def compute_summary(conn, threshold: float) -> dict:
-    """Brier score and paper P&L over every market resolved so far, ever."""
-    total_brier = 0.0
-    n_brier = 0
-    paper_staked = 0.0
-    paper_return = 0.0
-    n_bets = 0
-
-    cur = conn.execute("SELECT event_slug, actual_temp FROM resolutions")
-    for event_slug, actual in cur.fetchall():
+def per_event_records(conn, threshold: float) -> list[dict]:
+    """One record per resolved event (city + day), each carrying its own
+    Brier contribution and the individual paper bets placed that day. This
+    is the single source of truth compute_summary() rolls up -- and what
+    lets the dashboard show a day-by-day breakdown instead of just a
+    lifetime total, so a bad run isn't hidden inside a good average."""
+    records = []
+    cur = conn.execute(
+        "SELECT event_slug, city, target_date, actual_temp FROM resolutions "
+        "ORDER BY target_date, city"
+    )
+    for event_slug, city, target_date, actual in cur.fetchall():
         if actual is None:
             continue
+
+        brier_sum = 0.0
+        brier_n = 0
+        bets = []
         for label, low, high, market_price, model_prob, edge in _latest_snapshot_rows(conn, event_slug):
             in_bracket = low <= actual < high
             outcome = 1.0 if in_bracket else 0.0
-            total_brier += (model_prob - outcome) ** 2
-            n_brier += 1
+            brier_sum += (model_prob - outcome) ** 2
+            brier_n += 1
 
             if abs(edge) >= threshold:
-                n_bets += 1
                 if edge > 0:
-                    paper_staked += market_price
-                    paper_return += 1.0 if in_bracket else 0.0
+                    stake = market_price
+                    returned = 1.0 if in_bracket else 0.0
                 else:
-                    paper_staked += (1 - market_price)
-                    paper_return += 1.0 if not in_bracket else 0.0
+                    stake = 1 - market_price
+                    returned = 1.0 if not in_bracket else 0.0
+                bets.append({
+                    "label": label,
+                    "edge": edge,
+                    "market_price": market_price,
+                    "model_probability": model_prob,
+                    "stake": stake,
+                    "returned": returned,
+                    "pnl": returned - stake,
+                })
+
+        day_staked = sum(b["stake"] for b in bets)
+        day_return = sum(b["returned"] for b in bets)
+        records.append({
+            "event_slug": event_slug,
+            "city": city,
+            "target_date": target_date,
+            "actual": actual,
+            "brier": (brier_sum / brier_n) if brier_n else None,
+            "n_brackets": brier_n,
+            "bets": bets,
+            "day_staked": day_staked,
+            "day_return": day_return,
+            "day_pnl": day_return - day_staked,
+        })
+    return records
+
+
+def render_pnl_chart_svg(records: list[dict], width: int = 900, height: int = 160, pad: int = 24) -> str:
+    """Tiny dependency-free line chart of cumulative paper P&L across
+    resolved days. Plain inline SVG on purpose -- no JS charting library to
+    fetch from a CDN that might be unreachable (or gone) a month from now."""
+    if not records:
+        return ""
+
+    cum = []
+    total = 0.0
+    for r in records:
+        total += r["day_pnl"]
+        cum.append(total)
+
+    n = len(cum)
+    y_min = min(0.0, min(cum))
+    y_max = max(0.0, max(cum))
+    if y_max == y_min:
+        y_max += 1.0
+
+    def x_of(i):
+        return pad + (i / max(n - 1, 1)) * (width - 2 * pad)
+
+    def y_of(v):
+        return height - pad - ((v - y_min) / (y_max - y_min)) * (height - 2 * pad)
+
+    points = " ".join(f"{x_of(i):.1f},{y_of(v):.1f}" for i, v in enumerate(cum))
+    zero_y = y_of(0.0)
+    dots = "".join(
+        f'<circle cx="{x_of(i):.1f}" cy="{y_of(v):.1f}" r="3.5" '
+        f'fill="{"#4ade80" if v >= 0 else "#f87171"}">'
+        f'<title>{records[i]["city"]} {records[i]["target_date"]}: cumulative P&amp;L {v:+.2f}</title>'
+        f"</circle>"
+        for i, v in enumerate(cum)
+    )
+    return (
+        f'<svg viewBox="0 0 {width} {height}" width="100%" height="{height}" '
+        f'preserveAspectRatio="none" role="img" aria-label="Cumulative paper P&amp;L by resolved day">'
+        f'<line x1="{pad}" y1="{zero_y:.1f}" x2="{width - pad}" y2="{zero_y:.1f}" '
+        f'stroke="#2a2e37" stroke-dasharray="4,3"/>'
+        f'<polyline points="{points}" fill="none" stroke="#3b82f6" stroke-width="2"/>'
+        f"{dots}"
+        f"</svg>"
+    )
+
+
+def compute_summary(conn, threshold: float) -> dict:
+    """Brier score and paper P&L over every market resolved so far, ever,
+    plus a day-by-day breakdown for transparency."""
+    records = per_event_records(conn, threshold)
+
+    total_brier = sum(r["brier"] * r["n_brackets"] for r in records if r["brier"] is not None)
+    n_brier = sum(r["n_brackets"] for r in records)
+    paper_staked = sum(r["day_staked"] for r in records)
+    paper_return = sum(r["day_return"] for r in records)
+    n_bets = sum(len(r["bets"]) for r in records)
 
     return {
         "brier_score": (total_brier / n_brier) if n_brier else None,
@@ -129,6 +216,9 @@ def compute_summary(conn, threshold: float) -> dict:
         "paper_pnl": paper_return - paper_staked,
         "paper_roi": ((paper_return - paper_staked) / paper_staked) if paper_staked else None,
         "threshold": threshold,
+        "total_resolved": len(records),
+        "daily": records,
+        "pnl_chart_svg": render_pnl_chart_svg(records),
     }
 
 
