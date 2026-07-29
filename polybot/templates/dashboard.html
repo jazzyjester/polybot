@@ -99,9 +99,9 @@
         {% set is_edge = (b.edge >= edge_threshold or b.edge <= -edge_threshold) %}
         <tr class="{{ 'edge' if is_edge else '' }}">
           <td>{{ b.label }}</td>
-          <td>{{ "%.3f"|format(b.market_price) }}</td>
-          <td>{{ "%.3f"|format(b.model_probability) }}</td>
-          <td class="{{ 'pos' if b.edge > 0 else 'neg' }}">{{ "%+.3f"|format(b.edge) }}</td>
+          <td>{{ "%.4f"|format(b.market_price) }}</td>
+          <td>{{ "%.4f"|format(b.model_probability) }}</td>
+          <td class="{{ 'pos' if b.edge > 0 else 'neg' }}">{{ "%+.4f"|format(b.edge) }}</td>
           <td>{{ "%.0f"|format(b.volume) }}</td>
         </tr>
         {% endfor %}
@@ -170,9 +170,9 @@
                 <ul>
                   {% for b in r.bets %}
                   <li>
-                    {{ b.label }} — edge {{ "%+.3f"|format(b.edge) }},
-                    staked {{ "%.2f"|format(b.stake) }}, returned {{ "%.2f"|format(b.returned) }}
-                    (<span class="{{ 'pos' if b.pnl >= 0 else 'neg' }}">{{ "%+.2f"|format(b.pnl) }}</span>)
+                    {{ b.label }} — edge {{ "%+.4f"|format(b.edge) }},
+                    staked {{ "%.4f"|format(b.stake) }}, returned {{ "%.2f"|format(b.returned) }}
+                    (<span class="{{ 'pos' if b.pnl >= 0 else 'neg' }}">{{ "%+.4f"|format(b.pnl) }}</span>)
                   </li>
                   {% endfor %}
                 </ul>
