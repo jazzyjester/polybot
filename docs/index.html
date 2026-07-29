@@ -44,7 +44,16 @@
   .error { color: #f87171; font-size: 0.85rem; }
   .accuracy { background: #1a1d24; border: 1px solid #2a2e37; border-radius: 8px; padding: 1rem; }
   .accuracy h2 { margin-top: 0; font-size: 1.05rem; }
+  .accuracy h3 { font-size: 0.9rem; margin: 1.2rem 0 0.4rem 0; color: #c8ccd4; }
   .accuracy ul { margin: 0.4rem 0; padding-left: 1.2rem; font-size: 0.85rem; color: #c8ccd4; }
+  .chart { margin: 0.4rem 0 1rem 0; }
+  table.daily { font-size: 0.82rem; }
+  table.daily th, table.daily td { text-align: left; padding: 0.35rem 0.6rem; }
+  table.daily td:nth-child(3), table.daily td:nth-child(4), table.daily td:last-child { text-align: right; }
+  table.daily tbody tr:nth-child(odd) { background: #15171d; }
+  details summary { cursor: pointer; color: #9aa0a6; }
+  details ul { margin: 0.3rem 0 0 0; padding-left: 1.1rem; }
+  details li { margin: 0.15rem 0; }
   .disclaimer { color: #9aa0a6; font-size: 0.78rem; margin-top: 2rem; line-height: 1.4; }
 </style>
 </head>
@@ -751,7 +760,7 @@
         <li>
           Brier score:
           
-            0.0741 over 66 outcomes
+            0.0741 over 66 bracket outcomes
             (0 = perfect, 0.25 ≈ coin flip, lower is better)
           
         </li>
@@ -769,6 +778,243 @@
           
         </li>
       </ul>
+
+      
+      <h3>Cumulative paper P&amp;L by resolved day</h3>
+      <div class="chart"><svg viewBox="0 0 900 160" width="100%" height="160" preserveAspectRatio="none" role="img" aria-label="Cumulative paper P&amp;L by resolved day"><line x1="24" y1="136.0" x2="876" y2="136.0" stroke="#2a2e37" stroke-dasharray="4,3"/><polyline points="24.0,109.5 194.4,87.1 364.8,61.9 535.2,62.3 705.6,49.1 876.0,24.0" fill="none" stroke="#3b82f6" stroke-width="2"/><circle cx="24.0" cy="109.5" r="3.5" fill="#4ade80"><title>chongqing 2026-07-28: cumulative P&amp;L +2.00</title></circle><circle cx="194.4" cy="87.1" r="3.5" fill="#4ade80"><title>denver 2026-07-28: cumulative P&amp;L +3.69</title></circle><circle cx="364.8" cy="61.9" r="3.5" fill="#4ade80"><title>munich 2026-07-28: cumulative P&amp;L +5.59</title></circle><circle cx="535.2" cy="62.3" r="3.5" fill="#4ade80"><title>paris 2026-07-28: cumulative P&amp;L +5.55</title></circle><circle cx="705.6" cy="49.1" r="3.5" fill="#4ade80"><title>taipei 2026-07-28: cumulative P&amp;L +6.55</title></circle><circle cx="876.0" cy="24.0" r="3.5" fill="#4ade80"><title>toronto 2026-07-28: cumulative P&amp;L +8.44</title></circle></svg></div>
+
+      <h3>Day by day (most recent first)</h3>
+      <table class="daily">
+        <thead>
+          <tr><th>date</th><th>city</th><th>actual</th><th>brier</th><th>bets</th><th>day P&amp;L</th></tr>
+        </thead>
+        <tbody>
+          
+          <tr>
+            <td>2026-07-28</td>
+            <td style="text-transform: capitalize;">toronto</td>
+            <td>26.1</td>
+            <td>0.041</td>
+            <td>
+              
+              <details>
+                <summary>3 bets</summary>
+                <ul>
+                  
+                  <li>
+                    25°C — edge +0.129,
+                    staked 0.00, returned 0.00
+                    (<span class="neg">-0.00</span>)
+                  </li>
+                  
+                  <li>
+                    26°C — edge +0.419,
+                    staked 0.00, returned 1.00
+                    (<span class="pos">+1.00</span>)
+                  </li>
+                  
+                  <li>
+                    27°C — edge -0.600,
+                    staked 0.11, returned 1.00
+                    (<span class="pos">+0.89</span>)
+                  </li>
+                  
+                </ul>
+              </details>
+              
+            </td>
+            <td class="pos">+1.89</td>
+          </tr>
+          
+          <tr>
+            <td>2026-07-28</td>
+            <td style="text-transform: capitalize;">taipei</td>
+            <td>34.5</td>
+            <td>0.150</td>
+            <td>
+              
+              <details>
+                <summary>3 bets</summary>
+                <ul>
+                  
+                  <li>
+                    32°C — edge +0.225,
+                    staked 0.00, returned 0.00
+                    (<span class="neg">-0.00</span>)
+                  </li>
+                  
+                  <li>
+                    33°C — edge +0.774,
+                    staked 0.00, returned 0.00
+                    (<span class="neg">-0.00</span>)
+                  </li>
+                  
+                  <li>
+                    36°C — edge -1.000,
+                    staked 0.00, returned 1.00
+                    (<span class="pos">+1.00</span>)
+                  </li>
+                  
+                </ul>
+              </details>
+              
+            </td>
+            <td class="pos">+1.00</td>
+          </tr>
+          
+          <tr>
+            <td>2026-07-28</td>
+            <td style="text-transform: capitalize;">paris</td>
+            <td>32.4</td>
+            <td>0.063</td>
+            <td>
+              
+              <details>
+                <summary>3 bets</summary>
+                <ul>
+                  
+                  <li>
+                    32°C — edge -0.250,
+                    staked 0.46, returned 0.00
+                    (<span class="neg">-0.46</span>)
+                  </li>
+                  
+                  <li>
+                    33°C — edge -0.085,
+                    staked 0.56, returned 1.00
+                    (<span class="pos">+0.44</span>)
+                  </li>
+                  
+                  <li>
+                    34°C — edge +0.210,
+                    staked 0.02, returned 0.00
+                    (<span class="neg">-0.02</span>)
+                  </li>
+                  
+                </ul>
+              </details>
+              
+            </td>
+            <td class="neg">-0.04</td>
+          </tr>
+          
+          <tr>
+            <td>2026-07-28</td>
+            <td style="text-transform: capitalize;">munich</td>
+            <td>27.3</td>
+            <td>0.080</td>
+            <td>
+              
+              <details>
+                <summary>3 bets</summary>
+                <ul>
+                  
+                  <li>
+                    27°C — edge +0.171,
+                    staked 0.06, returned 1.00
+                    (<span class="pos">+0.94</span>)
+                  </li>
+                  
+                  <li>
+                    28°C — edge -0.181,
+                    staked 0.33, returned 1.00
+                    (<span class="pos">+0.67</span>)
+                  </li>
+                  
+                  <li>
+                    29°C — edge -0.096,
+                    staked 0.71, returned 1.00
+                    (<span class="pos">+0.29</span>)
+                  </li>
+                  
+                </ul>
+              </details>
+              
+            </td>
+            <td class="pos">+1.90</td>
+          </tr>
+          
+          <tr>
+            <td>2026-07-28</td>
+            <td style="text-transform: capitalize;">denver</td>
+            <td>91.2</td>
+            <td>0.059</td>
+            <td>
+              
+              <details>
+                <summary>3 bets</summary>
+                <ul>
+                  
+                  <li>
+                    88-89°F — edge +0.193,
+                    staked 0.00, returned 0.00
+                    (<span class="neg">-0.00</span>)
+                  </li>
+                  
+                  <li>
+                    90-91°F — edge +0.290,
+                    staked 0.00, returned 1.00
+                    (<span class="pos">+1.00</span>)
+                  </li>
+                  
+                  <li>
+                    92-93°F — edge -0.496,
+                    staked 0.31, returned 1.00
+                    (<span class="pos">+0.69</span>)
+                  </li>
+                  
+                </ul>
+              </details>
+              
+            </td>
+            <td class="pos">+1.69</td>
+          </tr>
+          
+          <tr>
+            <td>2026-07-28</td>
+            <td style="text-transform: capitalize;">chongqing</td>
+            <td>35.3</td>
+            <td>0.052</td>
+            <td>
+              
+              <details>
+                <summary>4 bets</summary>
+                <ul>
+                  
+                  <li>
+                    33°C or below — edge +0.129,
+                    staked 0.00, returned 0.00
+                    (<span class="neg">-0.00</span>)
+                  </li>
+                  
+                  <li>
+                    34°C — edge +0.419,
+                    staked 0.00, returned 0.00
+                    (<span class="neg">-0.00</span>)
+                  </li>
+                  
+                  <li>
+                    35°C — edge +0.387,
+                    staked 0.00, returned 1.00
+                    (<span class="pos">+1.00</span>)
+                  </li>
+                  
+                  <li>
+                    36°C — edge -0.935,
+                    staked 0.00, returned 1.00
+                    (<span class="pos">+1.00</span>)
+                  </li>
+                  
+                </ul>
+              </details>
+              
+            </td>
+            <td class="pos">+2.00</td>
+          </tr>
+          
+        </tbody>
+      </table>
+      
     
   </div>
 
@@ -777,8 +1023,6 @@
     Edge = model probability − Polymarket price. This is a research pilot: it logs and
     paper-trades only. Treat early "edges" as unproven until the Brier score and paper P&amp;L
     above are based on enough resolved markets to mean something (a handful of days isn't).
-    
-      <br>Runs on <a href="https://github.com/jazzyjester/polybot" style="color:#9aa0a6;">GitHub Actions</a>, source of truth is the committed SQLite db in the repo.
     
   </div>
 
