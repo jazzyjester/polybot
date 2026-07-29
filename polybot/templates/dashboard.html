@@ -45,6 +45,7 @@
   .accuracy { background: #1a1d24; border: 1px solid #2a2e37; border-radius: 8px; padding: 1rem; }
   .accuracy h2 { margin-top: 0; font-size: 1.05rem; }
   .accuracy h3 { font-size: 0.9rem; margin: 1.2rem 0 0.4rem 0; color: #c8ccd4; }
+  .rules { font-size: 0.82rem; color: #9aa0a6; line-height: 1.5; margin: 0.4rem 0 1rem 0; }
   .accuracy ul { margin: 0.4rem 0; padding-left: 1.2rem; font-size: 0.85rem; color: #c8ccd4; }
   .chart { margin: 0.4rem 0 1rem 0; }
   table.daily { font-size: 0.82rem; }
@@ -116,6 +117,16 @@
 
   <div class="accuracy">
     <h2>Track record (paper trading)</h2>
+    <p class="rules">
+      <strong>How each paper bet works:</strong> a bracket becomes a bet the first moment its
+      edge (model probability − market price) reaches ±{{ edge_threshold }} — that snapshot's
+      price is the entry price, shown as "bought" below. Each qualifying bracket buys exactly
+      one hypothetical $1-payout share sized at that price — no bigger stakes for bigger edges,
+      no shared bankroll, no cap on how many can fire at once. There's no total "amount invested"
+      concept: every qualifying bracket is its own independent $1-notional position. The position
+      is held to resolution with no early exit — if the price swings against it before the market
+      closes, that isn't currently acted on (see below).
+    </p>
     {% if not accuracy %}
       <p class="dim">No resolver run yet.</p>
     {% elif accuracy.error %}
@@ -170,7 +181,8 @@
                 <ul>
                   {% for b in r.bets %}
                   <li>
-                    {{ b.label }} — edge {{ "%+.4f"|format(b.edge) }},
+                    {{ b.label }} — bought {{ b.entry_time.strftime("%b %d %H:%M UTC") }}
+                    at edge {{ "%+.4f"|format(b.edge) }},
                     staked {{ "%.4f"|format(b.stake) }}, returned {{ "%.2f"|format(b.returned) }}
                     (<span class="{{ 'pos' if b.pnl >= 0 else 'neg' }}">{{ "%+.4f"|format(b.pnl) }}</span>)
                   </li>

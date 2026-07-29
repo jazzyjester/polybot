@@ -43,6 +43,31 @@ def _latest_snapshot_rows(conn, event_slug: str):
     return cur.fetchall()
 
 
+def _entry_snapshot_rows(conn, event_slug: str, threshold: float):
+    """For each bracket in this event, the FIRST snapshot where the edge
+    signal fired (|edge| >= threshold). This is the price a real trade
+    would enter at -- the moment the opportunity was first spotted -- not
+    whatever price happened to be logged right before the market closed
+    (which is what _latest_snapshot_rows gives you, and is the wrong price
+    to simulate a "buy" at)."""
+    cur = conn.execute(
+        """SELECT s.bracket_label, s.low, s.high, s.market_price,
+                  s.model_probability, s.edge, s.ts
+           FROM snapshots s
+           INNER JOIN (
+               SELECT bracket_label, MIN(id) AS entry_id
+               FROM snapshots
+               WHERE event_slug = ? AND ABS(edge) >= ?
+               GROUP BY bracket_label
+           ) entry ON s.bracket_label = entry.bracket_label
+                   AND s.id = entry.entry_id
+           WHERE s.event_slug = ?
+           ORDER BY s.id""",
+        (event_slug, threshold, event_slug),
+    )
+    return cur.fetchall()
+
+
 def resolve_pending(conn) -> tuple[list[dict], list[str]]:
     """Resolve every finished-but-unresolved market. Returns
     (newly_resolved, skipped) -- both just describe this run's activity,
@@ -108,31 +133,38 @@ def per_event_records(conn, threshold: float) -> list[dict]:
         if actual is None:
             continue
 
+        # Brier score uses the freshest read on the model right before the
+        # market closed -- that's the right question for "how good was our
+        # forecast." Paper P&L below uses a different, earlier snapshot on
+        # purpose: "would this have made money if traded" needs the price at
+        # the moment the opportunity was first spotted, not the final one.
         brier_sum = 0.0
         brier_n = 0
-        bets = []
         for label, low, high, market_price, model_prob, edge in _latest_snapshot_rows(conn, event_slug):
             in_bracket = low <= actual < high
             outcome = 1.0 if in_bracket else 0.0
             brier_sum += (model_prob - outcome) ** 2
             brier_n += 1
 
-            if abs(edge) >= threshold:
-                if edge > 0:
-                    stake = market_price
-                    returned = 1.0 if in_bracket else 0.0
-                else:
-                    stake = 1 - market_price
-                    returned = 1.0 if not in_bracket else 0.0
-                bets.append({
-                    "label": label,
-                    "edge": edge,
-                    "market_price": market_price,
-                    "model_probability": model_prob,
-                    "stake": stake,
-                    "returned": returned,
-                    "pnl": returned - stake,
-                })
+        bets = []
+        for label, low, high, market_price, model_prob, edge, ts in _entry_snapshot_rows(conn, event_slug, threshold):
+            in_bracket = low <= actual < high
+            if edge > 0:
+                stake = market_price
+                returned = 1.0 if in_bracket else 0.0
+            else:
+                stake = 1 - market_price
+                returned = 1.0 if not in_bracket else 0.0
+            bets.append({
+                "label": label,
+                "entry_time": datetime.fromisoformat(ts),
+                "edge": edge,
+                "market_price": market_price,
+                "model_probability": model_prob,
+                "stake": stake,
+                "returned": returned,
+                "pnl": returned - stake,
+            })
 
         day_staked = sum(b["stake"] for b in bets)
         day_return = sum(b["returned"] for b in bets)
