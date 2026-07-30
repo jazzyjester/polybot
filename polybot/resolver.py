@@ -228,6 +228,43 @@ def render_pnl_chart_svg(records: list[dict], width: int = 900, height: int = 16
     )
 
 
+def per_city_summary(records: list[dict]) -> list[dict]:
+    """Roll per_event_records up by city, so a city with a real edge (or a
+    bad one) isn't hidden inside a single blended average. Sorted best ROI
+    first -- purely for readability, not a claim that the ranking is
+    reliable yet (each city typically has very few resolved days so far)."""
+    by_city: dict[str, dict] = {}
+    for r in records:
+        c = by_city.setdefault(r["city"], {
+            "city": r["city"], "n_resolved": 0,
+            "brier_sum": 0.0, "n_brier": 0,
+            "n_bets": 0, "staked": 0.0, "returned": 0.0,
+        })
+        c["n_resolved"] += 1
+        if r["brier"] is not None:
+            c["brier_sum"] += r["brier"] * r["n_brackets"]
+            c["n_brier"] += r["n_brackets"]
+        c["n_bets"] += len(r["bets"])
+        c["staked"] += r["day_staked"]
+        c["returned"] += r["day_return"]
+
+    summaries = []
+    for c in by_city.values():
+        pnl = c["returned"] - c["staked"]
+        summaries.append({
+            "city": c["city"],
+            "n_resolved": c["n_resolved"],
+            "brier_score": (c["brier_sum"] / c["n_brier"]) if c["n_brier"] else None,
+            "n_bets": c["n_bets"],
+            "staked": c["staked"],
+            "returned": c["returned"],
+            "pnl": pnl,
+            "roi": (pnl / c["staked"]) if c["staked"] else None,
+        })
+    summaries.sort(key=lambda s: s["roi"] if s["roi"] is not None else float("-inf"), reverse=True)
+    return summaries
+
+
 def compute_summary(conn, threshold: float) -> dict:
     """Brier score and paper P&L over every market resolved so far, ever,
     plus a day-by-day breakdown for transparency."""
@@ -250,6 +287,7 @@ def compute_summary(conn, threshold: float) -> dict:
         "threshold": threshold,
         "total_resolved": len(records),
         "daily": records,
+        "by_city": per_city_summary(records),
         "pnl_chart_svg": render_pnl_chart_svg(records),
     }
 

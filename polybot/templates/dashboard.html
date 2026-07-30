@@ -158,6 +158,36 @@
         </li>
       </ul>
 
+      {% if accuracy.by_city %}
+      <h3>By city</h3>
+      <p class="rules" style="margin-top:0;">
+        Ranked by ROI. Treat this ranking as noisy, not a verdict — with only a handful of
+        resolved days per city so far, a city sitting at the top or bottom easily swaps places
+        as more days resolve.
+      </p>
+      <table class="daily">
+        <thead>
+          <tr><th>city</th><th>days resolved</th><th>brier</th><th>bets</th><th>staked</th><th>returned</th><th>P&amp;L</th><th>ROI</th></tr>
+        </thead>
+        <tbody>
+          {% for c in accuracy.by_city %}
+          <tr>
+            <td style="text-transform: capitalize;">{{ c.city }}</td>
+            <td>{{ c.n_resolved }}</td>
+            <td>{{ "%.3f"|format(c.brier_score) if c.brier_score is not none else "—" }}</td>
+            <td>{{ c.n_bets }}</td>
+            <td>{{ "%.4f"|format(c.staked) }}</td>
+            <td>{{ "%.4f"|format(c.returned) }}</td>
+            <td class="{{ 'pos' if c.pnl >= 0 else 'neg' }}">{{ "%+.4f"|format(c.pnl) }}</td>
+            <td class="{{ 'pos' if (c.roi is not none and c.roi >= 0) else 'neg' }}">
+              {{ "%+.1f"|format(c.roi * 100) + "%" if c.roi is not none else "—" }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+
       {% if accuracy.daily %}
       <h3>Cumulative paper P&amp;L by resolved day</h3>
       <div class="chart">{{ accuracy.pnl_chart_svg|safe }}</div>
