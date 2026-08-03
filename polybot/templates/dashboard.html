@@ -188,14 +188,48 @@
       </table>
       {% endif %}
 
+      {% if accuracy.by_day %}
+      <h3>By day</h3>
+      <p class="rules" style="margin-top:0;">
+        Same idea, grouped by calendar date across all 6 cities instead of by city — useful for
+        spotting whether a specific day was broadly easy or hard for the forecast everywhere.
+      </p>
+      <table class="daily">
+        <thead>
+          <tr><th>date</th><th>cities resolved</th><th>brier</th><th>bets</th><th>staked</th><th>returned</th><th>P&amp;L</th><th>ROI</th></tr>
+        </thead>
+        <tbody>
+          {% for d in accuracy.by_day %}
+          <tr>
+            <td>{{ d.target_date }}</td>
+            <td>{{ d.n_cities }}</td>
+            <td>{{ "%.3f"|format(d.brier_score) if d.brier_score is not none else "—" }}</td>
+            <td>{{ d.n_bets }}</td>
+            <td>{{ "%.4f"|format(d.staked) }}</td>
+            <td>{{ "%.4f"|format(d.returned) }}</td>
+            <td class="{{ 'pos' if d.pnl >= 0 else 'neg' }}">{{ "%+.4f"|format(d.pnl) }}</td>
+            <td class="{{ 'pos' if (d.roi is not none and d.roi >= 0) else 'neg' }}">
+              {{ "%+.1f"|format(d.roi * 100) + "%" if d.roi is not none else "—" }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+
       {% if accuracy.daily %}
       <h3>Cumulative paper P&amp;L by resolved day</h3>
       <div class="chart">{{ accuracy.pnl_chart_svg|safe }}</div>
 
       <h3>Day by day (most recent first)</h3>
+      <p class="rules" style="margin-top:0;">
+        Day ROI can look extreme when a day's total staked was tiny (e.g. a handful of
+        near-zero-priced long-shot bets) — that's why "staked" is shown alongside it; a
+        big ROI% on a few cents staked isn't the same thing as a big ROI% on a dollar staked.
+      </p>
       <table class="daily">
         <thead>
-          <tr><th>date</th><th>city</th><th>actual</th><th>brier</th><th>bets</th><th>day P&amp;L</th></tr>
+          <tr><th>date</th><th>city</th><th>actual</th><th>brier</th><th>bets</th><th>staked</th><th>day P&amp;L</th><th>day ROI</th></tr>
         </thead>
         <tbody>
           {% for r in accuracy.daily|reverse %}
@@ -223,7 +257,11 @@
               <span class="dim">none</span>
               {% endif %}
             </td>
+            <td>{{ "%.4f"|format(r.day_staked) }}</td>
             <td class="{{ 'pos' if r.day_pnl >= 0 else 'neg' }}">{{ "%+.2f"|format(r.day_pnl) }}</td>
+            <td class="{{ 'pos' if (r.day_roi is not none and r.day_roi >= 0) else 'neg' }}">
+              {{ "%+.1f"|format(r.day_roi * 100) + "%" if r.day_roi is not none else "—" }}
+            </td>
           </tr>
           {% endfor %}
         </tbody>

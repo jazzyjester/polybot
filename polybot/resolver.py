@@ -168,6 +168,7 @@ def per_event_records(conn, threshold: float) -> list[dict]:
 
         day_staked = sum(b["stake"] for b in bets)
         day_return = sum(b["returned"] for b in bets)
+        day_pnl = day_return - day_staked
         records.append({
             "event_slug": event_slug,
             "city": city,
@@ -178,15 +179,21 @@ def per_event_records(conn, threshold: float) -> list[dict]:
             "bets": bets,
             "day_staked": day_staked,
             "day_return": day_return,
-            "day_pnl": day_return - day_staked,
+            "day_pnl": day_pnl,
+            "day_roi": (day_pnl / day_staked) if day_staked else None,
         })
     return records
 
 
-def render_pnl_chart_svg(records: list[dict], width: int = 900, height: int = 160, pad: int = 24) -> str:
+def render_pnl_chart_svg(records: list[dict], width: int = 900, height: int = 220) -> str:
     """Tiny dependency-free line chart of cumulative paper P&L across
-    resolved days. Plain inline SVG on purpose -- no JS charting library to
-    fetch from a CDN that might be unreachable (or gone) a month from now."""
+    resolved city-days, with axis titles and a few tick labels so it's
+    readable without guessing. Plain inline SVG on purpose -- no JS charting
+    library to fetch from a CDN that might be unreachable a month from now.
+
+    Uses a real viewBox aspect ratio (no preserveAspectRatio="none") so the
+    dots stay circular and text stays undistorted at any container width,
+    instead of stretching non-uniformly like the first version did."""
     if not records:
         return ""
 
@@ -202,14 +209,17 @@ def render_pnl_chart_svg(records: list[dict], width: int = 900, height: int = 16
     if y_max == y_min:
         y_max += 1.0
 
+    left_pad, right_pad, top_pad, bottom_pad = 58, 16, 16, 46
+    plot_w = width - left_pad - right_pad
+    plot_h = height - top_pad - bottom_pad
+
     def x_of(i):
-        return pad + (i / max(n - 1, 1)) * (width - 2 * pad)
+        return left_pad + (i / max(n - 1, 1)) * plot_w
 
     def y_of(v):
-        return height - pad - ((v - y_min) / (y_max - y_min)) * (height - 2 * pad)
+        return top_pad + plot_h - ((v - y_min) / (y_max - y_min)) * plot_h
 
     points = " ".join(f"{x_of(i):.1f},{y_of(v):.1f}" for i, v in enumerate(cum))
-    zero_y = y_of(0.0)
     dots = "".join(
         f'<circle cx="{x_of(i):.1f}" cy="{y_of(v):.1f}" r="3.5" '
         f'fill="{"#4ade80" if v >= 0 else "#f87171"}">'
@@ -217,11 +227,40 @@ def render_pnl_chart_svg(records: list[dict], width: int = 900, height: int = 16
         f"</circle>"
         for i, v in enumerate(cum)
     )
-    return (
-        f'<svg viewBox="0 0 {width} {height}" width="100%" height="{height}" '
-        f'preserveAspectRatio="none" role="img" aria-label="Cumulative paper P&amp;L by resolved day">'
-        f'<line x1="{pad}" y1="{zero_y:.1f}" x2="{width - pad}" y2="{zero_y:.1f}" '
+
+    # y=0 is always within [y_min, y_max] by construction above.
+    zero_line = (
+        f'<line x1="{left_pad}" y1="{y_of(0.0):.1f}" x2="{width - right_pad}" y2="{y_of(0.0):.1f}" '
         f'stroke="#2a2e37" stroke-dasharray="4,3"/>'
+    )
+
+    y_ticks = sorted({round(y_min, 4), round((y_min + y_max) / 2, 4), round(y_max, 4)})
+    y_tick_svg = "".join(
+        f'<text x="{left_pad - 8}" y="{y_of(v):.1f}" text-anchor="end" '
+        f'dominant-baseline="middle" font-size="11" fill="#9aa0a6">{v:+.2f}</text>'
+        for v in y_ticks
+    )
+
+    tick_indices = sorted({0, n // 2, n - 1})
+    x_tick_svg = "".join(
+        f'<text x="{x_of(i):.1f}" y="{height - bottom_pad + 18:.1f}" text-anchor="middle" '
+        f'font-size="11" fill="#9aa0a6">{records[i]["target_date"]}</text>'
+        for i in tick_indices
+    )
+
+    axis_titles = (
+        f'<text x="{left_pad + plot_w / 2:.1f}" y="{height - 6}" text-anchor="middle" '
+        f'font-size="11" fill="#c8ccd4">Resolved city-day (chronological) — '
+        f'each dot is one city on one day</text>'
+        f'<text x="14" y="{top_pad + plot_h / 2:.1f}" text-anchor="middle" '
+        f'font-size="11" fill="#c8ccd4" transform="rotate(-90 14 {top_pad + plot_h / 2:.1f})">'
+        f"Cumulative paper P&amp;L ($)</text>"
+    )
+
+    return (
+        f'<svg viewBox="0 0 {width} {height}" style="width:100%;height:auto;display:block;" '
+        f'role="img" aria-label="Cumulative paper P&amp;L by resolved city-day">'
+        f"{zero_line}{y_tick_svg}{x_tick_svg}{axis_titles}"
         f'<polyline points="{points}" fill="none" stroke="#3b82f6" stroke-width="2"/>'
         f"{dots}"
         f"</svg>"
@@ -265,6 +304,43 @@ def per_city_summary(records: list[dict]) -> list[dict]:
     return summaries
 
 
+def per_day_summary(records: list[dict]) -> list[dict]:
+    """Roll per_event_records up by calendar date across all cities, so you
+    can tell whether a given day was broadly good/bad for the model (e.g.
+    an easy or hard day for the forecast everywhere) rather than only
+    slicing by city. Most recent date first."""
+    by_day: dict[str, dict] = {}
+    for r in records:
+        d = by_day.setdefault(r["target_date"], {
+            "target_date": r["target_date"], "n_cities": 0,
+            "brier_sum": 0.0, "n_brier": 0,
+            "n_bets": 0, "staked": 0.0, "returned": 0.0,
+        })
+        d["n_cities"] += 1
+        if r["brier"] is not None:
+            d["brier_sum"] += r["brier"] * r["n_brackets"]
+            d["n_brier"] += r["n_brackets"]
+        d["n_bets"] += len(r["bets"])
+        d["staked"] += r["day_staked"]
+        d["returned"] += r["day_return"]
+
+    summaries = []
+    for d in by_day.values():
+        pnl = d["returned"] - d["staked"]
+        summaries.append({
+            "target_date": d["target_date"],
+            "n_cities": d["n_cities"],
+            "brier_score": (d["brier_sum"] / d["n_brier"]) if d["n_brier"] else None,
+            "n_bets": d["n_bets"],
+            "staked": d["staked"],
+            "returned": d["returned"],
+            "pnl": pnl,
+            "roi": (pnl / d["staked"]) if d["staked"] else None,
+        })
+    summaries.sort(key=lambda s: s["target_date"], reverse=True)
+    return summaries
+
+
 def compute_summary(conn, threshold: float) -> dict:
     """Brier score and paper P&L over every market resolved so far, ever,
     plus a day-by-day breakdown for transparency."""
@@ -288,6 +364,7 @@ def compute_summary(conn, threshold: float) -> dict:
         "total_resolved": len(records),
         "daily": records,
         "by_city": per_city_summary(records),
+        "by_day": per_day_summary(records),
         "pnl_chart_svg": render_pnl_chart_svg(records),
     }
 
