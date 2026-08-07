@@ -10,9 +10,18 @@ permissions:
   pages: write
   id-token: write
 
+# cancel-in-progress: true on purpose (learned the hard way 2026-08-07). A
+# run that gets stuck in GitHub's own queue (seen during a real Actions
+# outage -- runner pods stuck idle) sits in "waiting" with zero steps
+# executed. With cancel-in-progress: false, every later scheduled run just
+# queues up behind it forever -- nothing runs again until a human manually
+# cancels the stuck one. With true, the next scheduled trigger (<=30 min
+# later) simply supersedes it instead. Safe to cancel a "waiting" run since
+# it hasn't done anything yet; a run already past the commit step won't
+# normally still be alive 30 min later anyway.
 concurrency:
   group: scan-and-publish
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   scan:
